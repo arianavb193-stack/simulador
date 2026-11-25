@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="dark">
+<title>Sistema reproductivo femenino · Simulador anatómico 3D</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+ --bg0:#090d19;--bg1:#10172a;--surface:#151f35;--surface2:#1b2943;--line:#30405e;
+ --ink:#f1f4ff;--muted:#a3b0ca;--rose:#f28ba8;--rose2:#ca668a;--coral:#ff9d87;
+ --violet:#ba9bff;--teal:#70d9cf;--gold:#f4cb78;--blue:#75b9ee;--red:#dc7189;
+ --font-d:'Chakra Petch',system-ui,sans-serif;--font-b:'Inter',system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--bg0);color:var(--ink);font-family:var(--font-b)}
+body{overflow:hidden;font-size:13px;-webkit-font-smoothing:antialiased}
+button,select,input{font:inherit;color:inherit}
+button{cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
+::-webkit-scrollbar{width:9px;height:9px}::-webkit-scrollbar-track{background:#10182a}::-webkit-scrollbar-thumb{background:linear-gradient(180deg,#ba83b5,#65b9c8);border-radius:10px;border:2px solid #10182a}
+*{scrollbar-width:thin;scrollbar-color:#8d86b6 #10182a}
+#app{height:100vh;height:100dvh;display:grid;grid-template-columns:minmax(0,1fr) 350px;grid-template-rows:62px minmax(0,1fr)}
+header{grid-column:1/-1;display:flex;align-items:center;gap:13px;padding:0 18px;background:linear-gradient(100deg,#151a31,#10192b 60%,#251726);border-bottom:1px solid var(--line);position:relative;z-index:20}
+header:after{content:"";height:2px;position:absolute;left:0;right:0;bottom:-1px;background:linear-gradient(90deg,var(--violet),var(--rose),var(--teal),var(--gold));opacity:.9}
+.brand{display:flex;align-items:center;gap:11px;min-width:0}.brand svg{flex:none;filter:drop-shadow(0 0 9px #f28ba844)}
+.brand h1{font:700 18px var(--font-d);letter-spacing:.45px;white-space:nowrap}.brand h1 em{font-style:normal;color:var(--rose)}
+.brand p{font-size:10px;color:var(--muted);white-space:nowrap;margin-top:1px}
+.top-chip{font:600 10px var(--font-d);letter-spacing:.5px;color:#d8c9ff;border:1px solid #62517f;background:#29223d;padding:6px 10px;border-radius:99px;white-space:nowrap}
+.spacer{flex:1}
+.hbtn{display:flex;align-items:center;gap:7px;background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:8px 11px;font-size:11px;font-weight:700;transition:.18s;white-space:nowrap}
+.hbtn:hover{border-color:var(--rose);transform:translateY(-1px);box-shadow:0 4px 15px #f28ba822}.hbtn.off{color:var(--muted)}.hbtn svg{width:15px;height:15px}
+#stage{position:relative;overflow:hidden;background:radial-gradient(ellipse at 26% 18%,#2a2740 0%,transparent 44%),radial-gradient(ellipse at 76% 78%,#172b3b 0%,transparent 42%),linear-gradient(145deg,#10182b,#090e1a 68%,#101322)}
+#viewport{position:absolute;inset:0}#viewport canvas{display:block;width:100%;height:100%}
+#grain{position:absolute;inset:0;pointer-events:none;z-index:2;opacity:.035;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.7'/%3E%3C/svg%3E")}
+#vignette{position:absolute;inset:0;z-index:2;pointer-events:none;background:radial-gradient(ellipse at 50% 42%,transparent 52%,#05091499 100%)}
+#labelsLayer{position:absolute;inset:0;z-index:5;pointer-events:none}#leaderSvg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.pill{position:absolute;left:0;top:0;pointer-events:auto;cursor:pointer;display:flex;align-items:center;gap:6px;white-space:nowrap;background:#0b1323eF;border:1px solid var(--pc);color:var(--ink);padding:5px 9px;border-radius:99px;font:600 10px var(--font-d);box-shadow:0 3px 13px #0008;backdrop-filter:blur(7px);transition:box-shadow .2s,background .2s}
+.pill i{width:7px;height:7px;border-radius:50%;background:var(--pc);box-shadow:0 0 8px var(--pc);flex:none}.pill:hover,.pill.active{background:#263047;box-shadow:0 0 0 2px var(--pc),0 0 17px color-mix(in srgb,var(--pc) 45%,transparent)}
+#phaseBadge{position:absolute;top:15px;left:15px;z-index:6;display:flex;align-items:center;gap:10px;background:#0a1221d9;border:1px solid var(--line);border-left:4px solid var(--pc,var(--rose));border-radius:13px;padding:9px 13px;box-shadow:0 7px 24px #0006;backdrop-filter:blur(9px);max-width:min(370px,calc(100% - 30px))}
+#phaseBadge .num{width:38px;height:38px;display:grid;place-items:center;border-radius:10px;background:var(--pc,var(--rose));color:#161321;font:700 21px var(--font-d);flex:none}
+#phaseBadge .name{font:700 15px var(--font-d);color:var(--pc,var(--rose));letter-spacing:.5px}#phaseBadge .sub{font-size:9.5px;color:var(--muted);margin-top:2px}
+#hintChip{position:absolute;right:15px;top:16px;z-index:6;background:#0a1221c9;border:1px solid var(--line);border-radius:99px;padding:8px 12px;font-size:10px;color:var(--muted);backdrop-filter:blur(8px)}#hintChip b{color:var(--ink)}
+#viewBadge{position:absolute;top:76px;left:15px;z-index:6;font:600 9px var(--font-d);letter-spacing:1.2px;color:#d9caef;background:#38253c99;border:1px solid #845d84;padding:5px 9px;border-radius:7px;text-transform:uppercase}
+#infoCard{position:absolute;left:15px;bottom:122px;z-index:8;width:min(360px,calc(100% - 30px));max-height:32%;overflow:auto;background:#0b1425ed;border:1px solid var(--ic,var(--rose));border-radius:14px;padding:13px 15px;box-shadow:0 10px 34px #0008,0 0 20px color-mix(in srgb,var(--ic,var(--rose)) 17%,transparent);backdrop-filter:blur(10px);opacity:0;transform:translateY(12px);pointer-events:none;transition:.25s}
+#infoCard.show{opacity:1;transform:translateY(0);pointer-events:auto}#infoCard .eyebrow{font-size:9px;letter-spacing:1.5px;color:var(--ic,var(--rose));font-weight:800;text-transform:uppercase}#infoCard h3{font:700 17px var(--font-d);margin:4px 28px 6px 0}#infoCard p{font-size:11.5px;line-height:1.55;color:#d1d9eb}#infoCard .close{position:absolute;right:9px;top:7px;border:0;background:transparent;color:var(--muted);font-size:20px;padding:2px 5px}
+#timeline{position:absolute;left:12px;right:12px;bottom:12px;z-index:7;background:#091222df;border:1px solid var(--line);border-radius:14px;padding:9px 12px 8px;box-shadow:0 8px 30px #0008;backdrop-filter:blur(9px)}
+.tl-segs{display:flex;gap:4px;position:relative}.tl-seg{flex:var(--w);min-width:0;background:none;border:0;text-align:left;padding:0 2px}.tl-name{display:flex;align-items:center;gap:5px;font:600 10px var(--font-d);color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:5px}.tl-name i{font-style:normal;display:grid;place-items:center;width:16px;height:16px;flex:none;border-radius:5px;background:#253049;color:var(--muted);font-size:9px}.tl-bar{display:block;height:8px;background:#1b2940;border:1px solid #33415e;border-radius:6px;overflow:hidden}.tl-fill{display:block;height:100%;width:100%;background:var(--pc);transform-origin:left;transform:scaleX(0);border-radius:6px}.tl-seg.active .tl-name{color:var(--pc)}.tl-seg.active .tl-name i{background:var(--pc);color:#151321}.tl-seg.done .tl-fill{opacity:.4}.tl-seg.active .tl-bar{box-shadow:0 0 12px color-mix(in srgb,var(--pc) 45%,transparent)}
+#tlMarker{position:absolute;left:0;top:19px;bottom:-1px;width:2px;background:#fff;box-shadow:0 0 7px #fff;pointer-events:none;z-index:2}#tlMarker:before{content:"";position:absolute;top:-5px;left:-3px;border:4px solid transparent;border-top-color:#fff}
+.tl-ticks{height:11px;position:relative;font:9px var(--font-d);color:#71809c;margin-top:3px}.tl-ticks span{position:absolute;transform:translateX(-50%)}
+.tl-read{display:flex;justify-content:space-between;gap:10px;font:10px var(--font-d);color:var(--muted);margin-top:2px;flex-wrap:wrap}.tl-read b{color:var(--ink)}
+#flash{position:absolute;inset:0;background:#fff;z-index:15;pointer-events:none;opacity:0;transition:opacity .14s}#flash.on{opacity:.55}
+#loader{position:absolute;inset:0;z-index:25;display:grid;place-items:center;background:radial-gradient(ellipse at 35% 20%,#29243d,#090e1a 72%);transition:opacity .5s}
+#loader.done{opacity:0;pointer-events:none}.load-box{text-align:center;max-width:360px;padding:25px}.load-box svg{margin-bottom:13px;filter:drop-shadow(0 0 13px #f28ba855)}.load-box .pulse{transform-origin:center;animation:softPulse 1.1s ease-in-out infinite}.load-box h2{font:700 18px var(--font-d);letter-spacing:1px}.load-box p{font-size:11px;color:var(--muted);margin-top:7px;line-height:1.5}.load-bar{height:4px;width:180px;background:#263149;border-radius:5px;margin:17px auto 0;overflow:hidden}.load-bar i{display:block;width:42%;height:100%;background:linear-gradient(90deg,var(--violet),var(--rose));animation:loadSlide 1.2s ease-in-out infinite;border-radius:5px}
+@keyframes loadSlide{from{transform:translateX(-110%)}to{transform:translateX(260%)}}@keyframes softPulse{50%{transform:scale(1.12)}}
+#panel{background:linear-gradient(180deg,#111a2c,#0c1423);border-left:1px solid var(--line);overflow:auto;padding:15px 15px 22px;z-index:10}
+.sec{margin-bottom:19px}.sec-title{font:700 10px var(--font-d);letter-spacing:2px;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:8px;margin-bottom:10px}.sec-title:before{content:"";width:14px;height:3px;border-radius:3px;background:linear-gradient(90deg,var(--violet),var(--rose))}.sec-title.teal:before{background:linear-gradient(90deg,var(--teal),var(--blue))}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:9px 10px;font-size:11px;font-weight:700;transition:.17s;min-width:0}.btn:hover{border-color:var(--rose);transform:translateY(-1px);box-shadow:0 4px 16px #f28ba81e}.btn:active{transform:scale(.98)}.btn-primary{background:linear-gradient(135deg,#46304e,#342b4e);border-color:#7b5c8c}.btn-rose{background:linear-gradient(135deg,#b64f73,#843e6a);border-color:#e48baa;color:#fff}.btn-wide{width:100%}.row2{display:grid;grid-template-columns:1fr 1fr;gap:7px}.row3{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.view-switch{display:grid;grid-template-columns:1fr 1fr;gap:6px}.view-switch .btn.active{background:linear-gradient(135deg,#46304e,#253a49);border-color:var(--rose);color:#fff;box-shadow:inset 0 0 0 1px #f28ba833}
+.ctl-row{margin-top:11px}.ctl-label{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:11px;font-weight:700;margin-bottom:7px}.ctl-label output{font:600 11px var(--font-d);color:var(--rose);white-space:nowrap}input[type=range]{appearance:none;width:100%;height:6px;background:linear-gradient(90deg,var(--rc,var(--rose)) var(--p,50%),#29344d var(--p,50%));border-radius:9px;outline:none;cursor:pointer}input[type=range]::-webkit-slider-thumb{appearance:none;width:17px;height:17px;border-radius:50%;background:#fff;border:3px solid var(--rc,var(--rose));box-shadow:0 0 9px var(--rc,var(--rose))}input[type=range]::-moz-range-thumb{width:12px;height:12px;border-radius:50%;background:#fff;border:3px solid var(--rc,var(--rose));box-shadow:0 0 9px var(--rc,var(--rose))}.hint{font-size:9.5px;line-height:1.45;color:#8290aa;margin-top:5px}
+.switch-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:7px 1px;font-size:11px;font-weight:600}.switch-row small{display:block;font-size:9px;color:#8492ad;font-weight:400;margin-top:2px}.switch{position:relative;width:40px;height:22px;flex:none}.switch input{position:absolute;inset:0;opacity:0;z-index:2;cursor:pointer}.switch i{position:absolute;inset:0;border:1px solid var(--line);border-radius:99px;background:#26334e;transition:.2s}.switch i:after{content:"";position:absolute;left:2px;top:2px;width:16px;height:16px;border-radius:50%;background:#91a0b9;transition:.2s}.switch input:checked+i{background:#4a3451;border-color:var(--rose)}.switch input:checked+i:after{left:20px;background:var(--rose);box-shadow:0 0 9px var(--rose)}
+select{width:100%;background:var(--surface2);border:1px solid var(--line);border-radius:9px;padding:8px 9px;font-size:10.5px}
+#phaseCard{border:1px solid color-mix(in srgb,var(--pc,var(--rose)) 55%,var(--line));border-radius:13px;background:linear-gradient(150deg,color-mix(in srgb,var(--pc,var(--rose)) 13%,#111a2c),#111827);padding:12px 13px;transition:.25s}#phaseCard .head{display:flex;align-items:center;gap:9px;margin-bottom:7px}#phaseCard .n{width:30px;height:30px;display:grid;place-items:center;border-radius:8px;background:var(--pc,var(--rose));color:#171321;font:700 17px var(--font-d)}#phaseCard h3{font:700 14px var(--font-d);color:var(--pc,var(--rose))}#phaseCard small{display:block;color:var(--muted);font-size:9px;margin-top:1px}#phaseCard p{font-size:10.5px;color:#d6deed;line-height:1.5}#phaseCard .observe{margin-top:8px;border:1px dashed color-mix(in srgb,var(--pc,var(--rose)) 55%,transparent);background:#0a12228c;padding:7px 8px;border-radius:8px;color:var(--pc,var(--rose));font-size:10px;line-height:1.4}
+#legend{display:grid;grid-template-columns:1fr 1fr;gap:6px}.chip{display:flex;align-items:center;gap:7px;min-width:0;text-align:left;background:#151f34;border:1px solid #2b3954;border-radius:8px;padding:7px;font-size:9.5px;font-weight:700;transition:.15s}.chip span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.chip i{width:8px;height:8px;border-radius:50%;background:var(--pc);box-shadow:0 0 7px var(--pc);flex:none}.chip:hover,.chip.active{border-color:var(--pc);background:#242d45;transform:translateY(-1px)}
+.note{background:#131e31;border:1px solid #31405c;border-radius:10px;padding:9px 10px;font-size:9.5px;line-height:1.5;color:#aebbd1}.note b{color:#fff}.keys{color:#7f8ca6;font-size:9px;line-height:1.7;margin-top:9px}.keys b{font:600 9px var(--font-d);color:#cbd4e6;background:#202c43;border:1px solid #38465f;border-radius:4px;padding:1px 4px}
+#toasts{position:fixed;left:50%;bottom:18px;z-index:60;transform:translateX(-50%);display:flex;flex-direction:column;gap:7px;align-items:center;pointer-events:none}.toast{background:#18243aee;border:1px solid var(--teal);border-radius:99px;padding:8px 15px;font:600 11px var(--font-d);box-shadow:0 7px 20px #0008;animation:toastIn .25s ease-out,toastOut .3s 2.0s forwards}@keyframes toastIn{from{opacity:0;transform:translateY(9px)}}@keyframes toastOut{to{opacity:0;transform:translateY(8px)}}
+@media(max-width:920px){body{overflow:auto}#app{height:auto;min-height:100vh;grid-template-columns:1fr;grid-template-rows:58px minmax(470px,58vh) auto}header{padding:0 10px;gap:8px}.brand h1{font-size:14px}.brand p,.top-chip{display:none}.hbtn{padding:7px 8px;font-size:10px}#stage{min-height:470px}#panel{border-left:0;border-top:1px solid var(--line);overflow:visible}.tl-name{font-size:8.5px}.tl-name i{width:13px;height:13px;font-size:8px}#hintChip{display:none}#infoCard{bottom:115px;max-height:28%}#phaseBadge{top:10px;left:10px;padding:7px 9px}#phaseBadge .num{width:31px;height:31px;font-size:17px}#phaseBadge .name{font-size:12px}#viewBadge{top:61px;left:10px}}
+@media(max-width:500px){.brand svg{width:28px}.brand h1{font-size:12px}.hbtn span{display:none}#timeline{left:6px;right:6px;bottom:6px;padding:7px 7px 6px}.tl-name{white-space:normal;height:23px;align-items:flex-start;font-size:8px}.tl-read{font-size:8px}.top-chip{display:none}}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+</style>
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}
+</script>
+</head>
+<body>
+<div id="app">
+<header>
+ <div class="brand">
+  <svg width="36" height="36" viewBox="0 0 40 40" fill="none" aria-hidden="true">
+   <path d="M20 28V18M20 18C15 18 12 15 12 10M20 18C25 18 28 15 28 10M12 10C8 7 5 8 4 12M28 10C32 7 35 8 36 12" stroke="#f28ba8" stroke-width="3" stroke-linecap="round"/>
+   <path d="M14 24C14 30 16 33 20 35C24 33 26 30 26 24" stroke="#ba9bff" stroke-width="3" stroke-linecap="round"/>
+   <circle cx="4.5" cy="12" r="2.5" fill="#70d9cf"/><circle cx="35.5" cy="12" r="2.5" fill="#70d9cf"/>
+   <path d="M20 29V35" stroke="#f4cb78" stroke-width="2.5" stroke-linecap="round"/>
+  </svg>
+  <div><h1>SISTEMA <em>REPRODUCTIVO FEMENINO</em></h1><p>Simulador anatómico interactivo · Biología</p></div>
+ </div>
+ <span class="top-chip">ANATOMÍA INTERNA + EXTERNA · CICLO MENSTRUAL</span>
+ <div class="spacer"></div>
+ <button class="hbtn off" id="soundBtn" title="Activar o silenciar señales de interfaz" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M16 9l5 6m0-6-5 6"/></svg><span id="soundLabel">Sonido apagado</span></button>
+ <button class="hbtn" id="fsBtn" title="Pantalla completa"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3"/></svg><span>Pantalla completa</span></button>
+</header>
+<main id="stage">
+ <div id="viewport"></div><div id="grain"></div><div id="vignette"></div>
+ <div id="labelsLayer"><svg id="leaderSvg"></svg></div>
+ <div id="phaseBadge" style="--pc:#f28ba8"><div class="num" id="badgeNum">1</div><div><div class="name" id="badgeName">MENSTRUACIÓN</div><div class="sub" id="badgeSub">Días 1–5 · desprendimiento del endometrio</div></div></div>
+ <div id="viewBadge">VISTA INTERNA · CORTE DIDÁCTICO</div>
+ <div id="hintChip">🖱️ <b>Arrastra</b> para girar · <b>Rueda</b> para acercar · <b>Selecciona</b> una estructura</div>
+ <section id="infoCard" aria-live="polite"><button class="close" id="infoClose" aria-label="Cerrar ficha">×</button><div class="eyebrow" id="infoType">Estructura anatómica</div><h3 id="infoName">Útero</h3><p id="infoDesc"></p></section>
+ <section id="timeline">
+  <div class="tl-segs" id="tlSegs">
+   <button class="tl-seg" data-i="0" style="--pc:#f28ba8;--w:5"><span class="tl-name"><i>1</i>Menstruación</span><span class="tl-bar"><span class="tl-fill"></span></span></button>
+   <button class="tl-seg" data-i="1" style="--pc:#ba9bff;--w:8"><span class="tl-name"><i>2</i>Folicular / proliferativa</span><span class="tl-bar"><span class="tl-fill"></span></span></button>
+   <button class="tl-seg" data-i="2" style="--pc:#f4cb78;--w:1.5"><span class="tl-name"><i>3</i>Ovulación</span><span class="tl-bar"><span class="tl-fill"></span></span></button>
+   <button class="tl-seg" data-i="3" style="--pc:#70d9cf;--w:13.5"><span class="tl-name"><i>4</i>Lútea / secretora</span><span class="tl-bar"><span class="tl-fill"></span></span></button>
+   <div id="tlMarker"></div>
+  </div>
+  <div class="tl-ticks"><span style="left:0%">Día 1</span><span style="left:17.86%">5</span><span style="left:46.43%">13</span><span style="left:51.0%">14</span><span style="left:100%">28</span></div>
+  <div class="tl-read"><span>Ciclo modelo: día <b id="dayTxt">1</b> de 28 · Ciclos: <b id="cyclesTxt">0</b></span><span id="ovulationTxt">Folículo en desarrollo</span></div>
+ </section>
+ <div id="flash"></div>
+ <div id="loader"><div class="load-box" id="loadBox">
+  <svg width="66" height="66" viewBox="0 0 40 40" fill="none"><path class="pulse" d="M20 28V18M20 18C15 18 12 15 12 10M20 18C25 18 28 15 28 10M12 10C8 7 5 8 4 12M28 10C32 7 35 8 36 12M14 24C14 30 16 33 20 35C24 33 26 30 26 24" stroke="#f28ba8" stroke-width="3" stroke-linecap="round"/><circle cx="4.5" cy="12" r="2.5" fill="#70d9cf"/><circle cx="35.5" cy="12" r="2.5" fill="#70d9cf"/></svg>
+  <h2>PREPARANDO EL LABORATORIO…</h2><p>Construyendo las estructuras anatómicas y sus capas. Este modelo es esquemático y educativo.</p><div class="load-bar"><i></i></div>
+ </div></div>
+</main>
+<aside id="panel">
+ <section class="sec">
+  <h3 class="sec-title">Explorar la anatomía</h3>
+  <div class="view-switch"><button class="btn active" id="internalBtn">Vista interna</button><button class="btn" id="externalBtn">Vista externa · vulva</button></div>
+  <div class="hint">Cambia entre los órganos internos y los genitales externos. Puedes girar el modelo con el ratón o con el dedo.</div>
+ </section>
+ <section class="sec">
+  <h3 class="sec-title">Controles del ciclo</h3>
+  <div class="row2">
+   <button class="btn btn-primary" id="playBtn"><span id="playIcon">Ⅱ</span><span id="playLabel">Pausar</span></button>
+   <button class="btn" id="stepBtn">▶ Siguiente fase</button>
+  </div>
+  <div class="ctl-row"><div class="ctl-label"><span>Velocidad de animación</span><output id="speedOut">0.45 días/s</output></div><input type="range" id="speedSlider" min="0.1" max="2" step="0.05" value="0.45" style="--rc:#ba9bff"><div class="hint">La animación acelera el tiempo para mostrar los cambios; no representa la velocidad real del cuerpo.</div></div>
+  <div class="ctl-row"><div class="ctl-label"><span>Día del ciclo</span><output id="dayOut">Día 1</output></div><input type="range" id="daySlider" min="0" max="27.99" step="0.1" value="0" style="--rc:#f28ba8"></div>
+ </section>
+ <section class="sec">
+  <h3 class="sec-title">Vista anatómica</h3>
+  <button class="btn btn-rose btn-wide" id="explodeBtn" aria-pressed="false">✣ DESPIECE DE ESTRUCTURAS</button>
+  <div class="ctl-row"><div class="ctl-label"><span>Separación de estructuras</span><output id="sepOut">0%</output></div><input type="range" id="sepSlider" min="0" max="100" step="1" value="0" style="--rc:#ff9d87"></div>
+  <label class="switch-row"><span>Corte por capas / transparencia<small>Permite observar el interior del útero</small></span><span class="switch"><input type="checkbox" id="cutToggle" checked><i></i></span></label>
+  <label class="switch-row"><span>Etiquetas anatómicas<small>Nombres y líneas guía</small></span><span class="switch"><input type="checkbox" id="labelsToggle" checked><i></i></span></label>
+  <label class="switch-row"><span>Giro automático<small>Rotación lenta del modelo</small></span><span class="switch"><input type="checkbox" id="rotToggle"><i></i></span></label>
+  <div class="ctl-row"><div class="ctl-label"><span>Calidad gráfica</span></div><select id="qualitySel"><option value="alta">Alta · detalle y brillo</option><option value="media" selected>Media · recomendada</option><option value="baja">Baja · equipo lento</option></select></div>
+ </section>
+ <section class="sec">
+  <h3 class="sec-title teal">Cámara</h3>
+  <div class="row2"><button class="btn cam-btn" data-view="front">Frontal</button><button class="btn cam-btn" data-view="side">Lateral</button><button class="btn cam-btn" data-view="top">Superior</button><button class="btn cam-btn" data-view="iso">Isométrica</button></div>
+  <div class="row2" style="margin-top:7px"><button class="btn" id="randomBtn">Vista sorpresa</button><button class="btn" id="centerBtn">Centrar modelo</button></div>
+ </section>
+ <section class="sec">
+  <h3 class="sec-title teal" id="phaseTitle">Fase actual</h3>
+  <div id="phaseCard" style="--pc:#f28ba8"><div class="head"><div class="n" id="scNum">1</div><div><h3 id="scName">Menstruación</h3><small id="scSub">Días 1–5 · fase uterina</small></div></div><p id="scDesc"></p><div class="observe" id="scTip"></div></div>
+ </section>
+ <section class="sec">
+  <h3 class="sec-title">Partes y funciones</h3>
+  <div id="legend"></div>
+  <div class="hint" style="margin-top:8px">Selecciona una etiqueta, una parte del modelo o un nombre de esta lista para abrir su ficha.</div>
+ </section>
+ <section class="sec">
+  <h3 class="sec-title">Acciones</h3>
+  <div class="row2"><button class="btn" id="resetBtn">↻ Reiniciar</button><button class="btn btn-primary" id="shotBtn">▣ Captura PNG</button></div>
+  <div class="keys">Atajos: <b>Espacio</b> reproducir/pausar · <b>E</b> despiece · <b>→</b> siguiente fase · <b>C</b> corte · <b>L</b> etiquetas · <b>R</b> reiniciar · <b>Esc</b> cerrar ficha</div>
+ </section>
+ <section class="sec">
+  <div class="note"><b>Importante:</b> el ciclo de 28 días es un ejemplo didáctico, no una norma. La duración y el momento de la ovulación varían entre personas y entre ciclos. Las proporciones del modelo son ilustrativas, no están a escala. La uretra es parte del sistema urinario: su abertura aparece en la vista externa solo para distinguirla de la abertura vaginal.</div>
+ </section>
+ <section class="sec">
+  <div class="note"><b>Para recordar:</b> “vulva” nombra los genitales externos; “vagina” es el conducto interno. Los cuerpos y los genitales externos presentan variaciones naturales de forma, tamaño, color y simetría.</div>
+ </section>
+</aside>
+</div>
+<div id="toasts"></div>
+<script type="module">
+const $=s=>document.querySelector(s);
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const lerp=(a,b,t)=>a+(b-a)*t;
+const smooth=t=>t*t*(3-2*t);
+const V=(x,y,z)=>new THREE.Vector3(x,y,z);
+const state={day:0,speed:.45,playing:true,cycles:0,explode:0,explodeTarget:0,cut:true,labels:true,autoRot:false,quality:'media',selected:null,view:'internal',sound:false};
+const PARTS={
+ uterus:{name:'Útero: fondo y cuerpo',kind:'Órgano interno',color:'#f28ba8',desc:'El útero es un órgano muscular y hueco, situado en la pelvis entre la vejiga y el recto. Su parte superior redondeada se llama fondo y la zona principal es el cuerpo. Si ocurre un embarazo, aquí puede implantarse el embrión y desarrollarse el embarazo.'},
+ endometrium:{name:'Endometrio',kind:'Capa interna del útero',color:'#dc7189',desc:'Es el revestimiento que tapiza la cavidad uterina. Responde a las hormonas del ciclo: se renueva y engrosa para preparar el útero; cuando no hay embarazo, la capa funcional se desprende y sale con el sangrado menstrual.'},
+ myometrium:{name:'Miometrio',kind:'Capa muscular',color:'#ca668a',desc:'Es la capa gruesa de músculo liso que forma la mayor parte de la pared uterina. Sus contracciones participan en los cólicos menstruales y, durante el parto, ayudan a impulsar al bebé hacia el cuello uterino.'},
+ perimetrium:{name:'Perimetrio',kind:'Capa externa del útero',color:'#ffb0bd',desc:'Es la cubierta más externa del útero en las zonas donde está recubierto por peritoneo. Protege la superficie del órgano y continúa con los tejidos que lo rodean.'},
+ cervix:{name:'Cuello uterino o cérvix',kind:'Parte inferior del útero',color:'#d9859e',desc:'Es la zona estrecha e inferior del útero que se abre hacia la vagina mediante el canal cervical. Produce moco cervical, que cambia durante el ciclo; durante el parto puede dilatarse para permitir el paso del bebé.'},
+ vagina:{name:'Vagina',kind:'Conducto interno',color:'#ba8ba9',desc:'Es un conducto muscular y elástico que conecta el cuello uterino con el exterior del cuerpo. Por ella sale el flujo menstrual y puede pasar el bebé durante un parto vaginal. No es lo mismo que la vulva, que corresponde a los genitales externos.'},
+ tubes:{name:'Trompas uterinas o de Falopio',kind:'Conductos internos',color:'#f4cb78',desc:'Son dos conductos que conectan la parte superior del útero con la zona cercana a los ovarios. Su extremo en forma de embudo se llama infundíbulo; la región más amplia es la ampolla y el tramo estrecho próximo al útero es el istmo. Los cilios y los movimientos musculares ayudan a transportar el ovocito; la fecundación suele ocurrir en la ampolla.'},
+ fimbriae:{name:'Fimbrias',kind:'Extremo de las trompas',color:'#ffdc91',desc:'Son prolongaciones finas, parecidas a pequeños dedos, situadas en el extremo de cada trompa. Se acercan al ovario y ayudan a recoger el ovocito liberado durante la ovulación. La trompa no está pegada directamente al ovario.'},
+ ovaries:{name:'Ovarios',kind:'Órganos internos',color:'#ba9bff',desc:'Son dos órganos, uno a cada lado del útero. Contienen los ovocitos en distintas etapas de desarrollo y producen hormonas, principalmente estrógenos y progesterona, que participan en el ciclo menstrual.'},
+ follicles:{name:'Folículos ováricos',kind:'Estructuras del ovario',color:'#d4b6ff',desc:'Cada folículo contiene un ovocito rodeado de células que lo protegen, nutren y ayudan a desarrollarse. Durante la fase folicular varios empiezan a crecer y, por lo general, uno se vuelve dominante y puede liberar el ovocito en la ovulación.'},
+ ovum:{name:'Ovocito',kind:'Célula reproductiva',color:'#f4cb78',desc:'Es la célula reproductiva que se libera del ovario durante la ovulación. Las fimbrias ayudan a introducirla en la trompa uterina; si encuentra un espermatozoide y ocurre la fecundación, puede formarse un cigoto. El modelo representa su recorrido de forma simplificada.'},
+ corpus:{name:'Cuerpo lúteo',kind:'Estructura temporal del ovario',color:'#e6bd62',desc:'Después de la ovulación, el folículo que liberó el ovocito se transforma en cuerpo lúteo. Produce progesterona y también estrógenos, ayudando a mantener el endometrio. Si no hay embarazo, involuciona y bajan estas hormonas.'},
+ vulva:{name:'Vulva',kind:'Conjunto de genitales externos',color:'#eaa0a4',desc:'Vulva es el nombre del conjunto de los genitales externos: monte del pubis, labios mayores y menores, clítoris, vestíbulo y las aberturas uretral y vaginal. No debe usarse como sinónimo de vagina.'},
+ mons:{name:'Monte del pubis',kind:'Parte externa de la vulva',color:'#e9a2a2',desc:'Es una zona acolchada de tejido graso situada sobre el hueso púbico, delante de la vulva. Después de la pubertad puede cubrirse de vello, aunque la cantidad y distribución varían entre personas.'},
+ labiaMajora:{name:'Labios mayores',kind:'Pliegues externos',color:'#c87b91',desc:'Son dos pliegues externos de piel y tejido graso que rodean y ayudan a proteger las estructuras más internas de la vulva. Su tamaño, color, forma y presencia de vello son variables y normales.'},
+ labiaMinora:{name:'Labios menores',kind:'Pliegues internos',color:'#e68da6',desc:'Son dos pliegues de piel situados dentro de los labios mayores. Rodean el vestíbulo, donde se encuentran las aberturas uretral y vaginal, y se unen en su parte anterior alrededor del clítoris. No tienen un tamaño o una simetría únicos.'},
+ clitoris:{name:'Clítoris',kind:'Órgano externo e interno',color:'#f4cb78',desc:'Es un órgano eréctil con abundantes terminaciones nerviosas, relacionado principalmente con la sensación sexual. La parte visible es el glande, pero la mayor parte del clítoris se extiende internamente mediante un cuerpo y dos raíces (cruras). El modelo externo simplifica esa anatomía profunda.'},
+ urethra:{name:'Abertura de la uretra',kind:'Abertura del sistema urinario',color:'#70d9cf',desc:'Es la abertura por donde sale la orina desde la uretra. Pertenece al sistema urinario, no al reproductor. Está situada por delante (por encima en esta vista) de la abertura vaginal.'},
+ vaginalOpening:{name:'Abertura vaginal',kind:'Entrada a la vagina',color:'#ba8ba9',desc:'Es la abertura externa del conducto vaginal. Por ella sale el flujo menstrual y, durante un parto vaginal, pasa el bebé. Se encuentra debajo de la abertura de la uretra.'},
+ glands:{name:'Glándulas vestibulares mayores',kind:'Glándulas externas',color:'#70d9cf',desc:'También llamadas glándulas de Bartolino, son dos pequeñas glándulas situadas a ambos lados de la entrada vaginal. Sus conductos liberan una pequeña cantidad de moco que contribuye a humedecer la entrada de la vagina.'},
+ hymen:{name:'Himen',kind:'Tejido alrededor de la abertura vaginal',color:'#d9a8ca',desc:'Es un borde o pliegue de tejido que puede rodear parcialmente la abertura vaginal. Su forma y elasticidad varían mucho; no suele cubrirla por completo y su aspecto no permite saber si una persona ha tenido relaciones sexuales.'}
+};
+const PHASES=[
+ {name:'Menstruación',short:'Días 1–5 · fase uterina',color:'#f28ba8',start:0,end:5,desc:'El nivel de estrógeno y progesterona ha bajado y la capa funcional del endometrio se desprende. La sangre y el tejido salen del útero a través del cuello uterino y la vagina. Al mismo tiempo, en el ovario ya comienza una nueva fase folicular.',tip:'Observa: el revestimiento uterino aparece más delgado y pequeñas partículas descienden por el canal vaginal.'},
+ {name:'Fase folicular / proliferativa',short:'Días 6–13 · desarrollo',color:'#ba9bff',start:5,end:13,desc:'En el ovario, los folículos crecen y normalmente uno se vuelve dominante. El estrógeno favorece que el endometrio vuelva a crecer después de la menstruación. La fase folicular realmente comienza el día 1, por eso se superpone con los primeros días de sangrado.',tip:'Observa: el folículo dominante aumenta de tamaño y el endometrio se vuelve más grueso.'},
+ {name:'Ovulación',short:'Alrededor del día 14 · liberación',color:'#f4cb78',start:13,end:14.5,desc:'Un aumento pronunciado de la hormona LH desencadena la liberación del ovocito desde el folículo dominante. Las fimbrias ayudan a recogerlo y dirigirlo hacia la trompa uterina. En un ciclo de 28 días se suele representar cerca del día 14, pero la fecha real puede variar.',tip:'Observa: el ovocito sale del ovario y aparece junto al extremo con fimbrias de la trompa.'},
+ {name:'Fase lútea / secretora',short:'Días 15–28 · preparación',color:'#70d9cf',start:14.5,end:28,desc:'El folículo vacío se transforma en cuerpo lúteo y produce progesterona, que ayuda a mantener el endometrio preparado para una posible implantación. Si no hay embarazo, el cuerpo lúteo involuciona, bajan las hormonas y comienza una nueva menstruación.',tip:'Observa: aparece el cuerpo lúteo y el endometrio se mantiene grueso antes de que el ciclo vuelva a empezar.'}
+];
+const LEGEND={internal:['uterus','endometrium','myometrium','perimetrium','cervix','vagina','tubes','fimbriae','ovaries','follicles','ovum','corpus'],external:['vulva','mons','labiaMajora','labiaMinora','clitoris','urethra','vaginalOpening','glands','hymen']};
+let THREE,OrbitControls,RoomEnvironment,EffectComposer,RenderPass,UnrealBloomPass,OutputPass;
+try{
+ THREE=await import('three');
+ ({OrbitControls}=await import('three/addons/controls/OrbitControls.js'));
+ ({RoomEnvironment}=await import('three/addons/environments/RoomEnvironment.js'));
+ ({EffectComposer}=await import('three/addons/postprocessing/EffectComposer.js'));
+ ({RenderPass}=await import('three/addons/postprocessing/RenderPass.js'));
+ ({UnrealBloomPass}=await import('three/addons/postprocessing/UnrealBloomPass.js'));
+ ({OutputPass}=await import('three/addons/postprocessing/OutputPass.js'));
+}catch(err){showFatal('No se pudieron cargar las librerías 3D. Revisa tu conexión a internet y vuelve a abrir el archivo.');throw err;}
+function showFatal(msg){$('#loadBox').innerHTML=`<div style="font-size:36px">⚠</div><h2>NO SE PUDO INICIAR</h2><p>${msg}</p><button class="btn btn-primary" onclick="location.reload()" style="margin-top:14px">Reintentar</button>`;$('#loader').classList.remove('done');}
+try{init();}catch(err){console.error(err);showFatal('El navegador no pudo iniciar la escena 3D. Prueba con Chrome, Edge o Firefox actualizados y comprueba que WebGL esté activado.');}
+
+function init(){
+ const wrap=$('#viewport');
+ const renderer=new THREE.WebGLRenderer({antialias:true,alpha:false,preserveDrawingBuffer:true});renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.08;renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.localClippingEnabled=true;wrap.appendChild(renderer.domElement);
+ const scene=new THREE.Scene();scene.fog=new THREE.Fog(0x0c1424,14,38);
+ const camera=new THREE.PerspectiveCamera(39,1,.1,100);camera.position.set(0,1.2,13.5);
+ const controls=new OrbitControls(camera,renderer.domElement);controls.enableDamping=true;controls.dampingFactor=.07;controls.minDistance=5;controls.maxDistance=28;controls.maxPolarAngle=Math.PI*.92;controls.target.set(0,.25,0);controls.autoRotateSpeed=.48;
+ const pm=new THREE.PMREMGenerator(renderer);scene.environment=pm.fromScene(new RoomEnvironment(),.04).texture;pm.dispose();
+ scene.add(new THREE.HemisphereLight(0xcbd6ff,0x281d2b,.72));
+ const key=new THREE.DirectionalLight(0xffe8e0,1.55);key.position.set(5,8,8);key.castShadow=true;key.shadow.mapSize.set(1024,1024);key.shadow.camera.left=-8;key.shadow.camera.right=8;key.shadow.camera.top=8;key.shadow.camera.bottom=-8;scene.add(key);
+ const rim=new THREE.DirectionalLight(0x8d9eff,1.05);rim.position.set(-7,3,-6);scene.add(rim);
+ const fill=new THREE.PointLight(0xff95aa,.65,22);fill.position.set(-4,-1,5);scene.add(fill);
+ const eventLight=new THREE.PointLight(0xffd27a,0,7,2);eventLight.position.set(0,1.5,1);scene.add(eventLight);
+ const composer=new EffectComposer(renderer);composer.addPass(new RenderPass(scene,camera));const bloom=new UnrealBloomPass(new THREE.Vector2(800,600),.34,.38,.79);composer.addPass(bloom);composer.addPass(new OutputPass());
+ const bgGlow=new THREE.Mesh(new THREE.CircleGeometry(6.5,80),new THREE.MeshBasicMaterial({color:0x34233c,transparent:true,opacity:.12,side:THREE.DoubleSide,depthWrite:false}));bgGlow.position.set(0,.2,-3.2);scene.add(bgGlow);
+ const platform=new THREE.Mesh(new THREE.CylinderGeometry(4.8,5,.12,64),new THREE.MeshStandardMaterial({color:0x101c30,metalness:.45,roughness:.68}));platform.position.y=-3.05;platform.receiveShadow=true;scene.add(platform);
+ const ring=new THREE.Mesh(new THREE.TorusGeometry(4.5,.025,8,100),new THREE.MeshStandardMaterial({color:0xb37caa,emissive:0x754c78,emissiveIntensity:.8,metalness:.35,roughness:.4}));ring.rotation.x=Math.PI/2;ring.position.y=-2.98;scene.add(ring);
+ const grid=new THREE.GridHelper(24,24,0x29354d,0x1b273d);grid.position.y=-3.12;scene.add(grid);
+ const ambientCount=90;const dustGeo=new THREE.BufferGeometry();const dustPos=new Float32Array(ambientCount*3);const dustSeed=[];for(let i=0;i<ambientCount;i++)dustSeed.push({x:(Math.random()-.5)*12,y:-2+Math.random()*8,z:(Math.random()-.5)*8,v:.1+Math.random()*.25,p:Math.random()*6.28});dustGeo.setAttribute('position',new THREE.BufferAttribute(dustPos,3));const dust=new THREE.Points(dustGeo,new THREE.PointsMaterial({color:0xa4b5df,size:.045,transparent:true,opacity:.3,depthWrite:false}));dust.frustumCulled=false;scene.add(dust);
+ const internalRoot=new THREE.Group(),externalRoot=new THREE.Group();scene.add(internalRoot,externalRoot);externalRoot.visible=false;
+ const allParts=[];const labelRecords=[];const pickables=[];const mats=[];
+ function material(color,opts={}){const m=new THREE.MeshStandardMaterial({color,roughness:.48,metalness:.12,envMapIntensity:.55,...opts});m.userData.baseEmissive=m.emissive.getHex();m.userData.baseEI=m.emissiveIntensity;mats.push(m);return m;}
+ function part(id,parent,base,offset){const g=new THREE.Group();g.position.copy(base);g.userData.partId=id;parent.add(g);const rec={id,group:g,base:base.clone(),offset:offset.clone(),materials:[],visibleBase:true};allParts.push(rec);return rec;}
+ function addMesh(rec,geo,mat,pos=[0,0,0],scale=null){const m=new THREE.Mesh(geo,mat);m.position.set(...pos);if(scale)m.scale.set(...scale);m.castShadow=true;m.receiveShadow=true;m.userData.partId=rec.id;rec.group.add(m);if(!rec.materials.includes(mat))rec.materials.push(mat);pickables.push(m);return m;}
+ function extruded(rec,shape,mat,depth=.28,z=0,bevel=.07){const geo=new THREE.ExtrudeGeometry(shape,{depth,bevelEnabled:bevel>0,bevelSegments:2,steps:1,bevelSize:bevel,bevelThickness:bevel,curveSegments:24});geo.translate(0,0,-depth/2);return addMesh(rec,geo,mat,[0,0,z]);}
+ function tube(rec,points,radius,mat,segments=48){const curve=new THREE.CatmullRomCurve3(points.map(p=>V(...p)));return addMesh(rec,new THREE.TubeGeometry(curve,segments,radius,10,false),mat);}
+ function shapeUterus(){const s=new THREE.Shape();s.moveTo(-.25,-.5);s.bezierCurveTo(-.55,-.2,-.88,.35,-.91,1.18);s.bezierCurveTo(-.95,1.82,-.58,2.36,0,2.43);s.bezierCurveTo(.58,2.36,.95,1.82,.91,1.18);s.bezierCurveTo(.88,.35,.55,-.2,.25,-.5);s.bezierCurveTo(.15,-.62,-.15,-.62,-.25,-.5);s.closePath();return s;}
+ function ringLine(rec,points,r,mat){const c=new THREE.CatmullRomCurve3(points.map(p=>V(...p)));return addMesh(rec,new THREE.TubeGeometry(c,100,r,8,false),mat);}
+
+ /* ===== Vista interna: útero y capas ===== */
+ const uterus=part('uterus',internalRoot,V(0,.45,0),V(0,.25,.65));
+ extruded(uterus,shapeUterus(),material(0xb95879,{metalness:.18,roughness:.42}),.5,0,.12);
+ // La cavidad y las capas solo se muestran cuando se activa el corte didáctico.
+ const endo=part('endometrium',internalRoot,V(0,.45,.31),V(0,0,.85));
+ const lining=new THREE.Shape();lining.moveTo(-.20,-.18);lining.bezierCurveTo(-.38,.32,-.48,1.12,-.42,1.5);lining.quadraticCurveTo(0,2.05,.42,1.5);lining.bezierCurveTo(.48,1.12,.38,.32,.20,-.18);lining.quadraticCurveTo(0,-.34,-.20,-.18);lining.closePath();
+ extruded(endo,lining,material(0xe987a2,{emissive:0x6c243e,emissiveIntensity:.12,roughness:.55}),.035,.05,.015);
+ const lumen=new THREE.Shape();lumen.moveTo(-.08,-.08);lumen.bezierCurveTo(-.18,.36,-.27,1.15,-.25,1.47);lumen.quadraticCurveTo(0,1.82,.25,1.47);lumen.bezierCurveTo(.27,1.15,.18,.36,.08,-.08);lumen.quadraticCurveTo(0,-.14,-.08,-.08);lumen.closePath();
+ extruded(endo,lumen,material(0x70324f,{roughness:.85,transparent:true,opacity:.78,side:THREE.DoubleSide}),.025,.07,.005);
+ const myo=part('myometrium',internalRoot,V(.69,.52,.27),V(.95,.08,.2));
+ const muscleShape=new THREE.Shape();muscleShape.moveTo(-.05,-.28);muscleShape.quadraticCurveTo(.25,.4,.20,1.25);muscleShape.quadraticCurveTo(.32,1.72,.03,1.92);muscleShape.lineTo(.31,1.92);muscleShape.quadraticCurveTo(.63,1.55,.49,1.1);muscleShape.quadraticCurveTo(.56,.25,.22,-.25);muscleShape.closePath();
+ extruded(myo,muscleShape,material(0xe58ba1,{roughness:.6,emissive:0x4b2036,emissiveIntensity:.12}),.09,.08,.015);
+ const peri=part('perimetrium',internalRoot,V(0,.45,.43),V(0,.42,.72));
+ const outerPts=[[-.28,-.42,.0],[-.72,.0,.0],[-.9,.8,.0],[-.83,1.72,.0],[-.45,2.28,.0],[0,2.38,.0],[.45,2.28,.0],[.83,1.72,.0],[.9,.8,.0],[.72,0,.0],[.28,-.42,.0]];
+ ringLine(peri,outerPts,.035,material(0xffc2c9,{emissive:0x9e536c,emissiveIntensity:.2}));
+ // Fondo y cuerpo quedan señalados de forma separada dentro de la ficha general.
+ const cervix=part('cervix',internalRoot,V(0,-.08,.04),V(0,-.55,.28));
+ addMesh(cervix,new THREE.CylinderGeometry(.34,.29,.75,36,1,false),material(0xc97791,{roughness:.48}),[0,-.22,0]);
+ addMesh(cervix,new THREE.CylinderGeometry(.105,.12,.79,24),material(0x71334e,{roughness:.8}),[0,-.22,.19]);
+ const vagina=part('vagina',internalRoot,V(0,-.43,-.07),V(0,-1.0,-.05));
+ const vagCurve=new THREE.CatmullRomCurve3([V(0,-.23,.02),V(0,-.55,.06),V(0,-1.02,-.06),V(0,-1.48,-.20),V(0,-1.83,-.25)]);
+ addMesh(vagina,new THREE.TubeGeometry(vagCurve,42,.29,20,false),material(0x9c668e,{roughness:.58,side:THREE.DoubleSide}));
+ const vagInnerCurve=new THREE.CatmullRomCurve3([V(0,-.25,.20),V(0,-.57,.25),V(0,-1.02,.14),V(0,-1.48,-.01),V(0,-1.82,-.05)]);
+ addMesh(vagina,new THREE.TubeGeometry(vagInnerCurve,42,.16,16,false),material(0x452842,{roughness:.95,transparent:true,opacity:.6,side:THREE.DoubleSide}));
+ // Trompas: el extremo lateral queda cerca del ovario, sin unirse a él.
+ const tubes=part('tubes',internalRoot,V(0,0,0),V(0,.78,.12));
+ const tubeLeftPts=[[-.72,2.25,.04],[-1.05,2.58,.03],[-1.48,2.60,.03],[-1.85,2.37,.03],[-2.02,1.98,.03],[-1.90,1.65,.03]];
+ const tubeRightPts=tubeLeftPts.map(([x,y,z])=>[-x,y,z]);
+ const tubeLeftCurve=new THREE.CatmullRomCurve3(tubeLeftPts.map(p=>V(...p)));
+ const tubeRightCurve=new THREE.CatmullRomCurve3(tubeRightPts.map(p=>V(...p)));
+ addMesh(tubes,new THREE.TubeGeometry(tubeLeftCurve,60,.095,12,false),material(0xe2a66e,{roughness:.45}));
+ addMesh(tubes,new THREE.TubeGeometry(tubeRightCurve,60,.095,12,false),material(0xe2a66e,{roughness:.45}));
+ // Fimbrias en forma de dedos junto al ovario, sin tocarlo.
+ const fim=part('fimbriae',internalRoot,V(0,0,0),V(0,1.0,.2));
+ for(const side of [-1,1]){for(let i=0;i<6;i++){const a=(i/5)*Math.PI*.9-.45;const sx=side;const start=[sx*1.84,1.72,.05];const end=[sx*(1.98+Math.cos(a)*.28),1.58+Math.sin(a)*.26,.05];tube(fim,[start,[sx*1.94,1.66,.07],end],.035,material(0xffd58a,{roughness:.5}),12);}}
+ // Ovarios y folículos de ambos lados.
+ const ovaries=part('ovaries',internalRoot,V(0,0,0),V(1.25,-.05,-.28));
+ const ovaryMat=material(0x9877c8,{roughness:.55});
+ for(const side of [-1,1]){
+  const ov=addMesh(ovaries,new THREE.SphereGeometry(1,32,24),ovaryMat,[side*1.72,1.25,-.03],[.43,.57,.30]);ov.rotation.z=side*.22;
+ }
+ const follicles=part('follicles',internalRoot,V(0,0,.30),V(1.50,.28,.18));
+ const follicleMat=material(0xe0b6ff,{roughness:.35,emissive:0x503c79,emissiveIntensity:.12});
+ const follicleCoords=[[-1.94,1.48,.12,.10],[-1.58,1.67,.10,.10],[-1.52,1.14,.09,.09],[-1.84,1.05,.11,.10],[-1.68,1.34,.18,.16],[1.55,1.35,.10,.10],[1.89,1.13,.11,.10],[1.78,1.62,.09,.09]];
+ const follicleMeshes=[];for(const [x,y,rx,ry] of follicleCoords){const f=addMesh(follicles,new THREE.SphereGeometry(1,18,14),follicleMat,[x,y,.23],[rx,ry,.11]);follicleMeshes.push(f);}
+ const dominant=addMesh(follicles,new THREE.SphereGeometry(1,24,18),material(0xf5d5a0,{emissive:0x80552c,emissiveIntensity:.25}),[-1.69,1.36,.31],[.25,.25,.17]);
+ const corpus=part('corpus',internalRoot,V(0,0,.33),V(-1.15,.25,.45));
+ const corpusMesh=addMesh(corpus,new THREE.SphereGeometry(1,28,22),material(0xe7b95f,{emissive:0x76521e,emissiveIntensity:.24}),[-1.69,1.36,.35],[.31,.31,.21]);
+ const ovum=part('ovum',internalRoot,V(0,0,.5),V(-.25,.28,.65));
+ const eggMat=material(0xffedb0,{emissive:0xe2b74c,emissiveIntensity:.65,roughness:.25});
+ const egg=addMesh(ovum,new THREE.SphereGeometry(.115,24,18),eggMat,[-1.9,1.66,.36]);
+ const eggHalo=addMesh(ovum,new THREE.TorusGeometry(.19,.018,8,36),material(0xffdc86,{emissive:0xc28e39,emissiveIntensity:.8,transparent:true,opacity:.7}),[-1.9,1.66,.36]);
+ /* ===== Vista externa: vulva (modelo esquemático) ===== */
+ function leafShapeOuter(){const s=new THREE.Shape();s.moveTo(0,.68);s.bezierCurveTo(-.48,.86,-.85,.36,-.78,-.32);s.bezierCurveTo(-.73,-.93,-.30,-1.42,0,-1.53);s.bezierCurveTo(-.18,-.95,-.18,-.10,0,.68);s.closePath();return s;}
+ function leafShapeInner(){const s=new THREE.Shape();s.moveTo(0,.34);s.bezierCurveTo(-.25,.58,-.52,.22,-.45,-.28);s.bezierCurveTo(-.40,-.75,-.17,-1.15,0,-1.25);s.bezierCurveTo(-.10,-.70,-.09,-.05,0,.34);s.closePath();return s;}
+ const vulva=part('vulva',externalRoot,V(0,0,0),V(0,0,.15));
+ const baseShape=new THREE.Shape();baseShape.absellipse(0,-.22,1.04,1.62,0,Math.PI*2,false,0);extruded(vulva,baseShape,material(0x9b536c,{transparent:true,opacity:.18,roughness:.8}),.08,-.20,.03);
+ const mons=part('mons',externalRoot,V(0,.58,.15),V(0,.70,.18));
+ addMesh(mons,new THREE.SphereGeometry(1,34,22),material(0xc77c89,{roughness:.65}),[0,0,0],[.66,.43,.19]);
+ const majora=part('labiaMajora',externalRoot,V(0,0,.16),V(0,0,.38));
+ const majorShape=leafShapeOuter();
+ for(const side of [-1,1]){const g=new THREE.Group();g.scale.x=-side;majora.group.add(g);const geo=new THREE.ExtrudeGeometry(majorShape,{depth:.18,bevelEnabled:true,bevelSegments:3,steps:1,bevelSize:.08,bevelThickness:.06,curveSegments:28});geo.translate(0,0,-.09);const m=new THREE.Mesh(geo,material(0xc87b91,{roughness:.7,side:THREE.DoubleSide}));m.position.x=side*.38;m.castShadow=true;m.userData.partId='labiaMajora';g.add(m);pickables.push(m);majora.materials.push(m.material);}
+ const minora=part('labiaMinora',externalRoot,V(0,0,.35),V(0,0,.55));
+ const innerShape=leafShapeInner();
+ for(const side of [-1,1]){const g=new THREE.Group();g.scale.x=-side;minora.group.add(g);const geo=new THREE.ExtrudeGeometry(innerShape,{depth:.10,bevelEnabled:true,bevelSegments:2,steps:1,bevelSize:.04,bevelThickness:.03,curveSegments:28});geo.translate(0,0,-.05);const m=new THREE.Mesh(geo,material(0xe68da6,{roughness:.56,side:THREE.DoubleSide}));m.position.x=side*.19;m.castShadow=true;m.userData.partId='labiaMinora';g.add(m);pickables.push(m);minora.materials.push(m.material);}
+ const clitoris=part('clitoris',externalRoot,V(0,0,.52),V(0,.18,.9));
+ addMesh(clitoris,new THREE.SphereGeometry(1,24,18),material(0xf4cb78,{roughness:.35,metalness:.05}),[0,.22,.07],[.15,.12,.12]);
+ const hoodCurve=new THREE.CatmullRomCurve3([V(-.20,.35,.09),V(-.12,.42,.12),V(0,.45,.13),V(.12,.42,.12),V(.20,.35,.09)]);addMesh(clitoris,new THREE.TubeGeometry(hoodCurve,24,.045,10,false),material(0xf3b0b6,{roughness:.65}));
+ // Se indica el cuerpo interno del clítoris en forma translúcida, no solo la parte visible.
+ const bodyCurveL=new THREE.CatmullRomCurve3([V(0,.22,0),V(-.22,.04,-.06),V(-.40,-.13,-.10)]);const bodyCurveR=new THREE.CatmullRomCurve3([V(0,.22,0),V(.22,.04,-.06),V(.40,-.13,-.10)]);
+ addMesh(clitoris,new THREE.TubeGeometry(bodyCurveL,18,.07,10,false),material(0xd59b70,{transparent:true,opacity:.55,roughness:.7}));addMesh(clitoris,new THREE.TubeGeometry(bodyCurveR,18,.07,10,false),material(0xd59b70,{transparent:true,opacity:.55,roughness:.7}));
+ const urethra=part('urethra',externalRoot,V(0,0,.62),V(0,-.2,.8));
+ addMesh(urethra,new THREE.SphereGeometry(1,18,14),material(0x3d7d7b,{roughness:.6}),[0,-.32,.05],[.075,.065,.055]);
+ const opening=part('vaginalOpening',externalRoot,V(0,0,.61),V(0,-.25,.83));
+ addMesh(opening,new THREE.SphereGeometry(1,24,18),material(0x512a43,{roughness:.9}),[0,-.89,.05],[.19,.28,.055]);
+ const openingRim=new THREE.TorusGeometry(.19,.035,8,32);addMesh(opening,openingRim,material(0xe2a0b1,{roughness:.7}),[0,-.89,.07]);
+ const glands=part('glands',externalRoot,V(0,0,.54),V(0,-.15,.65));
+ for(const side of [-1,1])addMesh(glands,new THREE.SphereGeometry(1,18,14),material(0x70bdb4,{roughness:.5}),[side*.29,-.94,.05],[.075,.085,.06]);
+ const hymen=part('hymen',externalRoot,V(0,0,.72),V(0,-.40,.85));
+ const hymenArc=new THREE.TorusGeometry(.17,.022,8,36,Math.PI*1.55);addMesh(hymen,hymenArc,material(0xd9a8ca,{transparent:true,opacity:.55,roughness:.75}),[0,-.89,.08]);
+
+ /* Materiales de corte, visibilidad y registro de piezas. */
+ function addLabel(id,parent,local,dx,dy,view){const anchor=new THREE.Object3D();anchor.position.copy(V(...local));parent.add(anchor);const pill=document.createElement('button');pill.className='pill';pill.style.setProperty('--pc',PARTS[id].color);pill.innerHTML=`<i></i>${PARTS[id].name}`;pill.addEventListener('click',e=>{e.stopPropagation();selectPart(state.selected===id?null:id);});$('#labelsLayer').appendChild(pill);const line=document.createElementNS('http://www.w3.org/2000/svg','line');line.setAttribute('stroke',PARTS[id].color);line.setAttribute('stroke-width','1.1');line.setAttribute('opacity','.68');const dot=document.createElementNS('http://www.w3.org/2000/svg','circle');dot.setAttribute('r','3');dot.setAttribute('fill',PARTS[id].color);$('#leaderSvg').append(line,dot);labelRecords.push({id,anchor,pill,line,dot,dx,dy,view});}
+ addLabel('uterus',uterus.group,[0,2.35,.1],0,-34,'internal');addLabel('endometrium',endo.group,[0,1.45,.13],-78,-30,'internal');addLabel('myometrium',myo.group,[.22,1.2,.15],92,-8,'internal');addLabel('perimetrium',peri.group,[.85,1.65,0],104,12,'internal');addLabel('cervix',cervix.group,[0,-.42,.18],75,8,'internal');addLabel('vagina',vagina.group,[.1,-1.45,.05],86,8,'internal');addLabel('tubes',tubes.group,[-1.42,2.57,.05],-14,-38,'internal');addLabel('fimbriae',fim.group,[-2.08,1.62,.12],-75,30,'internal');addLabel('ovaries',ovaries.group,[-1.72,1.23,.28],-85,4,'internal');addLabel('follicles',follicles.group,[-1.68,1.36,.4],-83,-26,'internal');addLabel('ovum',ovum.group,[-1.9,1.66,.5],-55,-38,'internal');addLabel('corpus',corpus.group,[-1.69,1.36,.52],-78,26,'internal');
+ addLabel('vulva',vulva.group,[0,-1.35,.2],0,40,'external');addLabel('mons',mons.group,[0,.12,.2],-64,-34,'external');addLabel('labiaMajora',majora.group,[-.68,-.7,.14],-105,4,'external');addLabel('labiaMinora',minora.group,[.35,-.55,.4],100,-5,'external');addLabel('clitoris',clitoris.group,[0,.25,.2],66,-30,'external');addLabel('urethra',urethra.group,[0,-.32,.12],80,-4,'external');addLabel('vaginalOpening',opening.group,[0,-.9,.12],83,18,'external');addLabel('glands',glands.group,[.29,-.94,.12],95,38,'external');addLabel('hymen',hymen.group,[.16,-.78,.15],-91,34,'external');
+ for(const rec of allParts){rec.group.traverse(o=>{if(o.isMesh&&!o.userData.partId)o.userData.partId=rec.id;});}
+ // En el panel de capas se enciende el interior uterino; la vista externa no usa ese corte.
+ function applyCut(){endo.group.visible=state.cut;myo.group.visible=state.cut;peri.group.visible=state.cut;}
+ applyCut();
+
+ /* Animación de menstruación: partículas discretas, sin realismo gráfico. */
+ const bleedGroup=new THREE.Group();internalRoot.add(bleedGroup);const bleedMeshes=[];
+ for(let i=0;i<14;i++){const m=new THREE.Mesh(new THREE.SphereGeometry(.025+Math.random()*.018,8,8),material(0xc65d78,{transparent:true,opacity:.62,roughness:.9}));m.userData.seed=Math.random()*6.28;m.userData.dropSpeed=.55+Math.random()*.5;bleedGroup.add(m);bleedMeshes.push(m);}
+
+ /* Labels y selección sincronizadas. */
+ const labelsLayer=$('#labelsLayer'),leaderSvg=$('#leaderSvg');let vw=800,vh=600;
+ function updateLabels(){if(!state.labels){labelsLayer.style.display='none';return;}labelsLayer.style.display='block';const pv=new THREE.Vector3();for(const r of labelRecords){const active=r.view===state.view;let visible=active;if(r.id==='endometrium'||r.id==='myometrium'||r.id==='perimetrium')visible=visible&&state.cut;if(r.id==='follicles')visible=visible&&state.day<14.5;if(r.id==='corpus')visible=visible&&state.day>=13.8;if(r.id==='ovum')visible=visible&&state.day>=13.3&&state.day<18.6;if(r.id==='hymen')visible=visible&&state.view==='external';if(!visible){r.pill.style.display='none';r.line.style.display='none';r.dot.style.display='none';continue;}r.anchor.getWorldPosition(pv);pv.project(camera);const behind=pv.z>1;const x=(pv.x*.5+.5)*vw,y=(-pv.y*.5+.5)*vh;const off=behind||x<-70||x>vw+70||y<-50||y>vh+50;if(off){r.pill.style.display='none';r.line.style.display='none';r.dot.style.display='none';continue;}r.pill.style.display='flex';r.line.style.display='block';r.dot.style.display='block';r.pill.style.opacity='1';const px=x+r.dx,py=y+r.dy;r.pill.style.transform=`translate(${px}px,${py}px) translate(-50%,-50%)`;r.line.setAttribute('x1',x);r.line.setAttribute('y1',y);r.line.setAttribute('x2',px);r.line.setAttribute('y2',py);r.dot.setAttribute('cx',x);r.dot.setAttribute('cy',y);r.pill.classList.toggle('active',state.selected===r.id);}}
+ const raycaster=new THREE.Raycaster(),pointer=new THREE.Vector2();let down=null,downAt=0,lastPointer=null,pointerDirty=false;
+ function selectPart(id){if(state.selected){const old=allParts.filter(p=>p.id===state.selected);for(const rec of old)for(const m of rec.materials){m.emissive.setHex(m.userData.baseEmissive);m.emissiveIntensity=m.userData.baseEI;}}state.selected=id;document.querySelectorAll('.chip').forEach(b=>b.classList.toggle('active',b.dataset.part===id));const card=$('#infoCard');if(id){const p=PARTS[id];card.style.setProperty('--ic',p.color);$('#infoType').textContent=p.kind;$('#infoName').textContent=p.name;$('#infoDesc').textContent=p.desc;card.classList.add('show');}else card.classList.remove('show');}
+ $('#infoClose').addEventListener('click',()=>selectPart(null));
+ function pickAt(cx,cy){const rect=renderer.domElement.getBoundingClientRect();pointer.x=(cx-rect.left)/rect.width*2-1;pointer.y=-((cy-rect.top)/rect.height)*2+1;raycaster.setFromCamera(pointer,camera);const hits=raycaster.intersectObjects(pickables,false);for(const h of hits){if(!h.object.visible)continue;let p=h.object;while(p&&!p.userData.partId)p=p.parent;if(p){const data=allParts.find(x=>x.id===p.userData.partId);if(data&&data.group.visible)return p.userData.partId;}}return null;}
+ renderer.domElement.addEventListener('pointerdown',e=>{down=[e.clientX,e.clientY];downAt=performance.now();});renderer.domElement.addEventListener('pointerup',e=>{if(!down)return;const d=Math.hypot(e.clientX-down[0],e.clientY-down[1]);if(d<6&&performance.now()-downAt<450){const id=pickAt(e.clientX,e.clientY);selectPart(id===state.selected?null:id);}down=null;});renderer.domElement.addEventListener('pointermove',e=>{lastPointer=[e.clientX,e.clientY];pointerDirty=true;});
+ function updateHover(t){if(pointerDirty&&lastPointer){pointerDirty=false;const id=pickAt(...lastPointer);renderer.domElement.style.cursor=id?'pointer':'grab';}if(state.selected){const rec=allParts.find(p=>p.id===state.selected);if(rec){const pulse=.22+.16*Math.sin(t*5);for(const m of rec.materials){m.emissive.set(PARTS[state.selected].color);m.emissiveIntensity=pulse;}}}}
+
+ /* ===== Actualización del ciclo ===== */
+ let currentPhase=-1;let phaseTween=null;let cameraTween=null;let lastDay=0;let toastTimer=null;
+ function phaseFor(day){if(day<5)return 0;if(day<13)return 1;if(day<14.5)return 2;return 3;}
+ function showPhase(i){const p=PHASES[i];$('#phaseBadge').style.setProperty('--pc',p.color);$('#badgeNum').textContent=i+1;$('#badgeName').textContent=p.name.toUpperCase();$('#badgeSub').textContent=p.short;$('#phaseCard').style.setProperty('--pc',p.color);$('#scNum').textContent=i+1;$('#scName').textContent=p.name;$('#scSub').textContent=p.short;$('#scDesc').textContent=p.desc;$('#scTip').textContent='👀 Observa: '+p.tip;document.querySelectorAll('.tl-seg').forEach((el,j)=>{el.classList.toggle('active',j===i);el.classList.toggle('done',j<i);});if(currentPhase!==-1&&i===2){eventLight.intensity=5;flash();signal();}currentPhase=i;}
+ function flash(){const f=$('#flash');f.classList.add('on');setTimeout(()=>f.classList.remove('on'),110);}
+ function signal(){if(!state.sound)return;try{soundEnsure();const t=audio.ctx.currentTime;const o=audio.ctx.createOscillator(),g=audio.ctx.createGain();o.type='sine';o.frequency.setValueAtTime(660,t);o.frequency.exponentialRampToValueAtTime(880,t+.12);g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.07,t+.025);g.gain.exponentialRampToValueAtTime(.0001,t+.2);o.connect(g);g.connect(audio.master);o.start(t);o.stop(t+.21);}catch(e){}}
+ function setDay(day,countWrap=true){const wrapped=((day%28)+28)%28;if(countWrap&&wrapped<lastDay-10)state.cycles++;state.day=wrapped;const d=state.day;const i=phaseFor(d);if(i!==currentPhase)showPhase(i);const shown=Math.min(28,Math.floor(d)+1);$('#dayTxt').textContent=shown;$('#dayOut').textContent='Día '+shown;$('#daySlider').value=d;setRange($('#daySlider'));$('#cyclesTxt').textContent=state.cycles;$('#tlMarker').style.left=(d/28*100)+'%';const phase=PHASES[i];const local=clamp((d-phase.start)/(phase.end-phase.start),0,1);const segs=[...document.querySelectorAll('.tl-seg')];segs.forEach((el,j)=>{const f=el.querySelector('.tl-fill');f.style.transform=`scaleX(${j<i?1:j===i?local:0})`;});$('#ovulationTxt').textContent=d<13?'Folículo en desarrollo':d<14.5?'Liberación del ovocito':d<18.5?'Ovocito en tránsito simplificado':'Actividad del cuerpo lúteo';lastDay=state.day;}
+ function setRange(el){el.style.setProperty('--p',((el.value-el.min)/(el.max-el.min)*100)+'%');}
+ document.querySelectorAll('input[type=range]').forEach(setRange);
+ function updateModel(t){const d=state.day;const thickness=d<5?lerp(.72,.45,d/5):d<13?lerp(.45,1,(d-5)/8):d<15?1:lerp(1,.86,clamp((d-15)/13,0,1));endo.group.scale.y=thickness;
+  const follicleGrowth=clamp(d/13,0,1);dominant.scale.set(.18+.12*follicleGrowth,.18+.12*follicleGrowth,.14+.05*follicleGrowth);dominant.visible=d<14.2;corpus.group.visible=d>=13.7;corpusMesh.scale.setScalar(d>=13.7?(.12+.19*clamp((d-13.7)/2,0,1))*lerp(1,.48,clamp((d-23)/5,0,1)):0.001);
+  const eggVisible=d>=13.4&&d<18.4;ovum.group.visible=eggVisible;if(eggVisible){const q=clamp((d-13.4)/4.2,0,1);const p=tubeLeftCurve.getPointAt(1-q);egg.position.copy(p).add(V(0,0,.42));eggHalo.position.copy(egg.position);eggHalo.scale.setScalar(.75+.15*Math.sin(t*5));}else{egg.position.set(-1.9,1.66,.36);eggHalo.position.copy(egg.position);}
+  bleedGroup.visible=d<5;for(let i=0;i<bleedMeshes.length;i++){const m=bleedMeshes[i];const seed=m.userData.seed;const travel=(t*m.userData.dropSpeed+seed) % 1;m.position.set((Math.sin(seed*2)*.10),-.48-travel*1.5,.36+Math.cos(seed)*.04);m.visible=bleedGroup.visible;}
+  eventLight.intensity=lerp(eventLight.intensity,0,Math.min(1,.08));eventLight.position.set(-1.2,1.7,.5);
+ }
+ function syncPlay(){ $('#playIcon').textContent=state.playing?'Ⅱ':'▶';$('#playLabel').textContent=state.playing?'Pausar':'Reproducir'; }
+ function nextPhase(){const i=phaseFor(state.day);const starts=[0,5,13,14.5,28];let target=starts[i+1];if(i===3)target=0;phaseTween={from:state.day,to:target,start:performance.now(),dur:750};state.playing=false;syncPlay();toast(i===3?'Comenzando un nuevo ciclo':'Avanzando a la siguiente fase');}
+ $('#playBtn').addEventListener('click',()=>{state.playing=!state.playing;phaseTween=null;syncPlay();});$('#stepBtn').addEventListener('click',nextPhase);
+ $('#speedSlider').addEventListener('input',e=>{state.speed=+e.target.value;$('#speedOut').textContent=state.speed.toFixed(2)+' días/s';setRange(e.target);});
+ $('#daySlider').addEventListener('input',e=>{phaseTween=null;state.playing=false;syncPlay();setDay(+e.target.value,false);});
+ document.querySelectorAll('.tl-seg').forEach(el=>el.addEventListener('click',()=>{const i=+el.dataset.i;phaseTween={from:state.day,to:PHASES[i].start+.02,start:performance.now(),dur:600};state.playing=false;syncPlay();}));
+
+ /* Despiece: capas y órganos se separan con desplazamientos controlados. */
+ function syncExplode(){const on=state.explodeTarget>.5;$('#explodeBtn').setAttribute('aria-pressed',on);$('#explodeBtn').textContent=on?'↶ ARMAR ESTRUCTURAS':'✣ DESPIECE DE ESTRUCTURAS';$('#explodeBtn').classList.toggle('btn-primary',on);}
+ $('#explodeBtn').addEventListener('click',()=>{state.explodeTarget=state.explodeTarget>.5?0:1;state.playing=state.explodeTarget===0;syncPlay();syncExplode();toast(state.explodeTarget?'Estructuras separadas para estudiarlas':'Estructuras en posición anatómica');});
+ $('#sepSlider').addEventListener('input',e=>{state.explode=+e.target.value/100;state.explodeTarget=state.explode;$('#sepOut').textContent=e.target.value+'%';setRange(e.target);syncExplode();});
+ $('#cutToggle').addEventListener('change',e=>{state.cut=e.target.checked;applyCut();toast(state.cut?'Corte didáctico activado':'Corte didáctico oculto');});
+ $('#labelsToggle').addEventListener('change',e=>state.labels=e.target.checked);$('#rotToggle').addEventListener('change',e=>{state.autoRot=e.target.checked;controls.autoRotate=state.autoRot;});
+
+ /* Vistas, cámara y transiciones. */
+ function camTo(pos,target,dur=.8){cameraTween={fp:camera.position.clone(),tp:pos.clone(),ft:controls.target.clone(),tt:target.clone(),start:performance.now(),dur:dur*1000};}
+ controls.addEventListener('start',()=>cameraTween=null);
+ const views={front:()=>state.view==='internal'?camTo(V(0,.3,13.5),V(0,.2,0)):camTo(V(0,-.1,8.3),V(0,-.25,0)),side:()=>state.view==='internal'?camTo(V(13,.4,.2),V(0,.2,0)):camTo(V(8,-.15,0),V(0,-.25,0)),top:()=>state.view==='internal'?camTo(V(.2,12,2.2),V(0,.2,0)):camTo(V(.1,7,1.1),V(0,-.25,0)),iso:()=>state.view==='internal'?camTo(V(7.5,5.4,12),V(0,.25,0)):camTo(V(4.2,2.8,7),V(0,-.25,0))};
+ document.querySelectorAll('.cam-btn').forEach(b=>b.addEventListener('click',()=>views[b.dataset.view]()));$('#centerBtn').addEventListener('click',()=>views.iso());$('#randomBtn').addEventListener('click',()=>{const a=Math.random()*Math.PI*2,p=.35+Math.random()*.8,r=10+Math.random()*5;camTo(V(Math.sin(a)*Math.sin(p)*r,Math.cos(p)*r,Math.cos(a)*Math.sin(p)*r),V(0,.2,0));toast('Vista aleatoria');});
+ function setView(view){state.view=view;internalRoot.visible=view==='internal';externalRoot.visible=view==='external';$('#internalBtn').classList.toggle('active',view==='internal');$('#externalBtn').classList.toggle('active',view==='external');$('#viewBadge').textContent=view==='internal'?'VISTA INTERNA · CORTE DIDÁCTICO':'VISTA EXTERNA · VULVA';selectPart(null);state.explode=0;state.explodeTarget=0;$('#sepSlider').value=0;$('#sepOut').textContent='0%';setRange($('#sepSlider'));syncExplode();const target=view==='internal'?V(0,.2,0):V(0,-.25,0);const pos=view==='internal'?V(0,1.2,13.5):V(0,-.1,8.3);camTo(pos,target,1);rebuildLegend();}
+ $('#internalBtn').addEventListener('click',()=>setView('internal'));$('#externalBtn').addEventListener('click',()=>setView('external'));
+ function rebuildLegend(){const root=$('#legend');root.innerHTML='';for(const id of LEGEND[state.view]){const p=PARTS[id];const b=document.createElement('button');b.className='chip';b.dataset.part=id;b.style.setProperty('--pc',p.color);b.innerHTML=`<i></i><span>${p.name}</span>`;b.addEventListener('click',()=>selectPart(state.selected===id?null:id));root.appendChild(b);}}
+ rebuildLegend();
+
+ /* Calidad gráfica. */
+ function applyQuality(){const q=state.quality;const dpr=q==='alta'?Math.min(devicePixelRatio,2):q==='media'?Math.min(devicePixelRatio,1.5):1;renderer.setPixelRatio(dpr);composer.setPixelRatio(dpr);bloom.enabled=q!=='baja';bloom.strength=q==='alta'?.42:.32;renderer.shadowMap.enabled=q!=='baja';key.castShadow=q!=='baja';const s=q==='alta'?2048:1024;if(key.shadow.map){key.shadow.map.dispose();key.shadow.map=null;}key.shadow.mapSize.set(s,s);resize();}
+ $('#qualitySel').addEventListener('change',e=>{state.quality=e.target.value;applyQuality();toast('Calidad gráfica actualizada');});
+
+ /* Sonido de interfaz, desactivado por defecto: no representa sonidos del cuerpo. */
+ const audio={ctx:null,master:null};function soundEnsure(){if(!audio.ctx){audio.ctx=new (window.AudioContext||window.webkitAudioContext)();audio.master=audio.ctx.createGain();audio.master.gain.value=.16;audio.master.connect(audio.ctx.destination);}if(audio.ctx.state==='suspended')audio.ctx.resume();}
+ $('#soundBtn').addEventListener('click',()=>{state.sound=!state.sound;$('#soundBtn').classList.toggle('off',!state.sound);$('#soundBtn').setAttribute('aria-pressed',state.sound);$('#soundLabel').textContent=state.sound?'Señales activadas':'Sonido apagado';if(state.sound){soundEnsure();signal();}toast(state.sound?'Señales de interfaz activadas':'Sonido apagado');});
+ $('#fsBtn').addEventListener('click',()=>{if(!document.fullscreenElement)document.documentElement.requestFullscreen?.().catch(()=>{});else document.exitFullscreen?.();});
+
+ /* Reinicio y captura. */
+ function resetAll(){state.day=0;state.speed=.45;state.playing=true;state.cycles=0;state.explode=0;state.explodeTarget=0;state.cut=true;state.labels=true;state.autoRot=false;phaseTween=null;selectPart(null);$('#speedSlider').value=.45;$('#speedOut').textContent='0.45 días/s';setRange($('#speedSlider'));$('#daySlider').value=0;$('#cutToggle').checked=true;$('#labelsToggle').checked=true;$('#rotToggle').checked=false;$('#sepSlider').value=0;$('#sepOut').textContent='0%';setRange($('#sepSlider'));$('#qualitySel').value='media';state.quality='media';applyQuality();controls.autoRotate=false;applyCut();syncPlay();syncExplode();lastDay=0;setDay(0,false);setView('internal');views.iso();toast('Simulador reiniciado');}
+ $('#resetBtn').addEventListener('click',resetAll);
+ $('#shotBtn').addEventListener('click',()=>{try{const a=document.createElement('a');a.download='sistema-reproductivo-femenino.png';a.href=renderer.domElement.toDataURL('image/png');a.click();flash();toast('Captura PNG preparada');}catch(e){toast('No se pudo crear la captura');}});
+
+ /* Atajos. */
+ window.addEventListener('keydown',e=>{if(/INPUT|SELECT|TEXTAREA/.test(e.target.tagName))return;switch(e.key){case' ':e.preventDefault();$('#playBtn').click();break;case'e':case'E':$('#explodeBtn').click();break;case'ArrowRight':$('#stepBtn').click();break;case'c':case'C':$('#cutToggle').checked=!$('#cutToggle').checked;$('#cutToggle').dispatchEvent(new Event('change'));break;case'l':case'L':$('#labelsToggle').checked=!$('#labelsToggle').checked;$('#labelsToggle').dispatchEvent(new Event('change'));break;case'r':case'R':resetAll();break;case'Escape':selectPart(null);break;}});
+
+ /* Resize y render loop único. */
+ function resize(){const r=wrap.getBoundingClientRect();vw=Math.max(1,r.width);vh=Math.max(1,r.height);renderer.setSize(vw,vh,false);composer.setSize(vw,vh);camera.aspect=vw/vh;camera.updateProjectionMatrix();$('#leaderSvg').setAttribute('viewBox',`0 0 ${vw} ${vh}`);}
+ new ResizeObserver(resize).observe(wrap);resize();applyQuality();views.iso();
+ const clock=new THREE.Clock();let first=true,lastSep=-1;
+ renderer.setAnimationLoop(()=>{const dt=Math.min(clock.getDelta(),.05),t=clock.elapsedTime,now=performance.now();
+  if(phaseTween){const k=clamp((now-phaseTween.start)/phaseTween.dur,0,1);const v=lerp(phaseTween.from,phaseTween.to,smooth(k));if(phaseTween.to===0&&phaseTween.from>20)setDay(v);else if(phaseTween.to>=28&&k>=1){state.cycles++;setDay(0);}else setDay(v);if(k>=1)phaseTween=null;}
+  else if(state.playing)setDay(state.day+state.speed*dt);
+  state.explode+=(state.explodeTarget-state.explode)*Math.min(1,dt*3.0);if(Math.abs(state.explode-state.explodeTarget)<.001)state.explode=state.explodeTarget;
+  for(const p of allParts){if(p.group.userData.contextOnly)continue;p.group.position.copy(p.base).addScaledVector(p.offset,smooth(state.explode));}
+  // Vistas explotadas se alejan un poco para conservar el encuadre.
+  if(Math.abs(state.explode-lastSep)>.004){lastSep=state.explode;const pct=Math.round(state.explode*100);$('#sepSlider').value=pct;$('#sepOut').textContent=pct+'%';setRange($('#sepSlider'));if(!cameraTween){const targetY=state.view==='internal'?.2:-.25;controls.target.y=lerp(controls.target.y,targetY+state.explode*.3,.06);const dir=camera.position.clone().sub(controls.target);const wanted=(state.view==='internal'?13.5:8.3)+state.explode*(state.view==='internal'?2.3:1.2);if(dir.length()>0.01)camera.position.copy(controls.target).add(dir.setLength(wanted));}}
+  if(cameraTween){const k=clamp((now-cameraTween.start)/cameraTween.dur,0,1),u=smooth(k);camera.position.lerpVectors(cameraTween.fp,cameraTween.tp,u);controls.target.lerpVectors(cameraTween.ft,cameraTween.tt,u);if(k>=1)cameraTween=null;}
+  controls.update();updateModel(t);updateLabels();updateHover(t);
+  for(let i=0;i<ambientCount;i++){const s=dustSeed[i];dustPos[i*3]=s.x+Math.sin(t*s.v+s.p)*.35;dustPos[i*3+1]=s.y+Math.sin(t*s.v*.7+s.p)*.28;dustPos[i*3+2]=s.z+Math.cos(t*s.v*.6+s.p)*.35;}dustGeo.attributes.position.needsUpdate=true;
+  if(state.quality==='baja')renderer.render(scene,camera);else composer.render();
+  if(first){first=false;$('#loader').classList.add('done');}
+ });
+ syncPlay();syncExplode();showPhase(0);setDay(0);
+}
+function toast(msg){const t=document.createElement('div');t.className='toast';t.textContent=msg;$('#toasts').appendChild(t);setTimeout(()=>t.remove(),2500);}
+</script>
+</body>
+</html>
